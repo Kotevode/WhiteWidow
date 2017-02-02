@@ -1,8 +1,6 @@
 import Foundation
 import Kanna
 
-typealias PageHandler = (HTMLDocument) -> Void
-
 public final class WhiteWidow {
     
     var tasks = [Task]()
@@ -15,6 +13,16 @@ public final class WhiteWidow {
     }
     
     public func run(){
+        
+        // 0. Add tasks root into database,
+        
+        // 1. Select expired links. 
+        // If all are actual - schedule when the latest
+        // If all once - exit
+        // 2. Make a queue
+        // 3. run crawlers
+        
+        // 4. When queue is empty go to 1.
         
     }
     

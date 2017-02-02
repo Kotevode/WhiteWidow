@@ -7,18 +7,29 @@
 //
 
 import Foundation
+import Kanna
 
 public class Task {
     
+    typealias PageHandler = (HTMLDocument) -> ()
+
     var frequency: TimeInterval
-    var path: String
+    var url: URL
+    var handlers = [URLWildcard : (handler: PageHandler,
+                                   frequency: TimeInterval)]()
     
     init(path: String, frequency: TimeInterval = 0) {
-        self.path = path
+        self.url = URL(string: path)!
         self.frequency = frequency
     }
     
-    func add(/*handler: PageHandler, maches: String, expires*/) -> Self {
+    func add(matches url: String,
+             expires: TimeInterval,
+             handler: @escaping PageHandler) -> Self {
+        let matchingURL = URL(string: url, relativeTo: self.url)!
+        let wildcard = URLWildcard(url: matchingURL)
+        let wildcardOptions = (handler: handler, frequency: expires)
+        handlers[wildcard] = wildcardOptions
         return self
     }
 }

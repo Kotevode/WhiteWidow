@@ -30,7 +30,8 @@ extension URL {
     
 }
 
-fileprivate enum AutomatoState {
+fileprivate enum AutomatoState: Equatable {
+    
     case state(State)
     case success
     case error
@@ -46,9 +47,22 @@ fileprivate enum AutomatoState {
         }
     }
     
+    static func ==(lhs: AutomatoState, rhs: AutomatoState) -> Bool {
+        switch (lhs, rhs) {
+        case (.success, .success):
+            fallthrough
+        case (.error, .error):
+            return true
+        case (.state(let lstate), .state(let rstate)):
+            return lstate == rstate
+        default:
+            return false
+        }
+    }
+    
 }
 
-fileprivate class State {
+fileprivate class State: Equatable {
     
     var value: String
     var match: AutomatoState
@@ -64,6 +78,12 @@ fileprivate class State {
     
     func nextState(key: String) -> AutomatoState {
         return value == key ? match : unmatch
+    }
+    
+    static func ==(lhs: State, rhs: State) -> Bool {
+        return lhs.value == rhs.value &&
+        lhs.match == rhs.match &&
+        lhs.unmatch == rhs.unmatch
     }
     
 }
@@ -93,10 +113,20 @@ fileprivate func makeAutomato(iterator: inout IndexingIterator<Array<String>>) -
     }
 }
 
-class URLWildcard {
-    
+class URLWildcard: CustomStringConvertible, Hashable {
+
     fileprivate var automato: AutomatoState
     var url: URL
+    var description: String {
+        return url.absoluteString
+    }
+    var hashValue: Int {
+        return description.hashValue
+    }
+    
+    static func ==(lhs: URLWildcard, rhs: URLWildcard) -> Bool {
+        return lhs.automato == rhs.automato
+    }
     
     init(url: URL) {
         self.url = url
@@ -115,11 +145,5 @@ class URLWildcard {
             return false
         }
     }
-    
-}
-
-extension Collection where Self.Iterator.Element == URLWildcard {
-    
-    
     
 }
