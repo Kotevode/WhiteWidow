@@ -37,11 +37,26 @@ class URLTaskTests: XCTestCase {
     }
     
     func testCanCreateURLTasks() {
-        
         var task = URLTask(url: URL(string: "http://google.com")!,
                            updateInterval: 0.0)
         try! task.save()
         XCTAssertEqual(try! URLTask.all().count, 1)
+    }
+    
+    func testCanSelectExpired() {
+        var t1 = URLTask(url: URL(string: "http://google.com")!, updateInterval: 30*60)
+        var t2 = URLTask(url: URL(string: "yahoo.com")!, updateInterval: 100*60)
+        var t3 = URLTask(url: URL(string: "yandex.com")!, updateInterval: 200*60)
+        t1.lastUpdate = Date().addingTimeInterval(-150*60)
+        t2.lastUpdate = Date().addingTimeInterval(-150*60)
+        t3.lastUpdate = Date().addingTimeInterval(-150*60)
+        try! t1.save()
+        try! t2.save()
+        try! t3.save()
+        
+        let expired = try! URLTask.expired()
+        
+        XCTAssertEqual(expired.count, 2)
     }
     
 }
