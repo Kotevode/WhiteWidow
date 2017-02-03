@@ -18,11 +18,17 @@ class URLTaskTests: XCTestCase {
     override func setUp() {
         super.setUp()
         let driver = FluentPostgreSQL.PostgreSQLDriver(host: "localhost",
-                                                   port: 5432,
-                                                   dbname: "ww_test",
-                                                   user: "ww_test",
-                                                   password: "qwerty")
+                                                       port: 5432,
+                                                       dbname: "ww_test",
+                                                       user: "ww_test",
+                                                       password: "qwerty")
         database = Fluent.Database(driver)
+        
+        do {
+            try URLTask.revert(database)
+            try database.delete("fluent")
+        } catch _ {}
+        
         guard try! database.hasPrepared(URLTask.self) else {
             try! database.prepare(URLTask.self)
             return
@@ -71,6 +77,19 @@ class URLTaskTests: XCTestCase {
         
         let parent = try! t2.parentTask()!.get()!
         XCTAssertEqual(parent.url.absoluteString, t1.url.absoluteString)
+    }
+    
+    func testCanSelectNearest() {
+        var t1 = URLTask(url: URL(string: "http://google.com")!, updateInterval: 30*60)
+        t1.lastUpdate = Date()
+        try! t1.save()
+        var t2 = URLTask(url: URL(string: "yahoo.com")!, updateInterval: 100*60)
+        t2.lastUpdate = Date()
+        try! t2.save()
+        
+        let nearest =  try! URLTask.nearest()!
+        XCTAssertEqual(nearest.url.absoluteString, t1.url.absoluteString)
+        
     }
     
 }

@@ -50,7 +50,7 @@ internal final class URLTask: Entity {
             "url": url.absoluteString,
             "update_interval": updateInterval,
             "last_update": lastUpdate?.timeIntervalSince1970
-        ])
+            ])
     }
     
     static func expired() throws -> [URLTask] {
@@ -58,6 +58,14 @@ internal final class URLTask: Entity {
             .filter("update_interval", Filter.Comparison.notEquals, 0.0)
             .filter("last_update + update_interval", Filter.Comparison.lessThan, Date().timeIntervalSince1970)
             .all()
+    }
+    
+    static func nearest() throws -> URLTask? {
+        return try URLTask.query()
+            .filter("last_update + update_interval", Filter.Comparison.greaterThan, Date().timeIntervalSince1970)
+            .sort("last_update + update_interval", Sort.Direction.ascending)
+            .limit(1)
+            .first()
     }
     
 }
