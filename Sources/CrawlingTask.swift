@@ -1,5 +1,5 @@
 //
-//  Task.swift
+//  CrawlingTask.swift
 //  WhiteWidow
 //
 //  Created by Mark on 02.02.17.
@@ -9,7 +9,7 @@
 import Foundation
 import Kanna
 
-public class Task {
+public class CrawlingTask {
     
     typealias PageHandler = (HTMLDocument) -> ()
 
@@ -32,4 +32,5 @@ public class Task {
         handlers[wildcard] = wildcardOptions
         return self
     }
+    
 }
