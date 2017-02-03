@@ -59,4 +59,18 @@ class URLTaskTests: XCTestCase {
         XCTAssertEqual(expired.count, 2)
     }
     
+    func testCanMakeHierarchy() {
+        var t1 = URLTask(url: URL(string: "http://google.com")!, updateInterval: 30*60)
+        var t2 = URLTask(url: URL(string: "yahoo.com")!, updateInterval: 100*60)
+        try! t1.save()
+        t2.foundIn = t1.id
+        try! t2.save()
+        
+        let child = try! t1.childrenTasks().first()!
+        XCTAssertEqual(child.url.absoluteString, t2.url.absoluteString)
+        
+        let parent = try! t2.parentTask()!.get()!
+        XCTAssertEqual(parent.url.absoluteString, t1.url.absoluteString)
+    }
+    
 }
