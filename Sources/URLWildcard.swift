@@ -64,26 +64,32 @@ fileprivate enum AutomatoState: Equatable {
 
 fileprivate class State: Equatable {
     
-    var value: String
-    var match: AutomatoState
-    var unmatch: AutomatoState
+    var routes = [String: AutomatoState]()
+    var defaultRoute: AutomatoState
+    
+    init(routes: [String: AutomatoState],
+         defaultRoute: AutomatoState = .error) {
+        self.routes = routes
+        self.defaultRoute = defaultRoute
+    }
     
     init(value: String,
          match: AutomatoState = .success,
          unmatch: AutomatoState = .error) {
-        self.value = value
-        self.match = match
-        self.unmatch = unmatch
+        self.routes[value] = match
+        self.defaultRoute = unmatch
     }
     
     func nextState(key: String) -> AutomatoState {
-        return value == key ? match : unmatch
+        guard let value = routes[key] else {
+            return defaultRoute
+        }
+        return value
     }
     
     static func ==(lhs: State, rhs: State) -> Bool {
-        return lhs.value == rhs.value &&
-        lhs.match == rhs.match &&
-        lhs.unmatch == rhs.unmatch
+        return lhs.routes == rhs.routes &&
+        lhs.defaultRoute == rhs.defaultRoute
     }
     
 }
@@ -102,7 +108,7 @@ fileprivate func makeAutomato(iterator: inout IndexingIterator<Array<String>>) -
         let next = makeAutomato(iterator: &iterator)
         switch next {
         case .state(let state):
-            state.unmatch = .state(state)
+            state.defaultRoute = .state(state)
             return .state(state)
         default:
             return next
