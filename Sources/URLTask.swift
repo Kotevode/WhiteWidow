@@ -19,6 +19,14 @@ internal final class URLTask: Entity {
     var updateInterval: TimeInterval// 0 means fetch once
     var lastUpdate: Date?
     
+    func parentTask() throws -> Parent<URLTask>? {
+        return try self.parent(foundIn)
+    }
+    
+    func childrenTasks() -> Children<URLTask> {
+        return self.children("urltask_id", URLTask.self)
+    }
+    
     init(url: URL,
          updateInterval: TimeInterval = 0.0) {
         self.url = url
