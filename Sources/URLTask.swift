@@ -9,7 +9,7 @@
 import Foundation
 import Fluent
 
-internal final class URLTask: Entity {
+internal final class URLTask: Entity, CustomStringConvertible {
     
     enum Status: String {
         case new = "new"
@@ -32,6 +32,16 @@ internal final class URLTask: Entity {
             return nil
         }
         return lastUpdate!.addingTimeInterval(updateInterval)
+    }
+    
+    var description: String {
+        var result = ["URLTask: \(url.absoluteString)"]
+        result += ["update interval: \(updateInterval)"]
+        if lastUpdate != nil {
+            result += ["last update: \(lastUpdate!)"]
+        }
+        result += ["last status: \(lastStatus.rawValue)"]
+        return result.joined(separator: ", ")
     }
     
     func parentTask() throws -> Parent<URLTask>? {

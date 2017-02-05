@@ -1,6 +1,7 @@
 import Foundation
 import Kanna
 import Fluent
+import CleanroomLogger
 
 public final class WhiteWidow: Dispatcher {
     
@@ -26,12 +27,22 @@ public final class WhiteWidow: Dispatcher {
     
     public func run(crawlers: Int,
                     fromScratch: Bool = false) throws {
-        try prepareDatabase()
-        try addRootURLTasks()
-        registerSignalHandlers()
-        createCrawlers(count: crawlers)
-        running = true
-        while running {}
+        Log.enable()
+        do {
+            try prepareDatabase()
+            try addRootURLTasks()
+            registerSignalHandlers()
+            createCrawlers(count: crawlers)
+            if loadTasks() {
+                startCrawlers()
+                running = true
+            }
+            while running {}
+            Log.verbose?.message("Crawling done. Bye.")
+        } catch let error {
+            Log.error?.message(error.localizedDescription)
+            Log.error?.trace()
+        }
     }
     
     func registerSignalHandlers() {
@@ -39,27 +50,36 @@ public final class WhiteWidow: Dispatcher {
     }
     
     func createCrawlers(count: Int){
+        Log.verbose?.message("Creating crawlers...")
         crawlers = [Crawler]()
         for i in 0..<count {
             let c = Crawler(dispatcher: self,
                             number: i)
             crawlers += [c]
+            Log.verbose?.message("Crawler \(i) created")
         }
+        Log.verbose?.message("Done.")
     }
     
     func startCrawlers() {
+        Log.verbose?.message("Starting crawlers...")
         finished = 0
         crawlers.forEach { $0.startCrawling() }
+        Log.verbose?.message("Done.")
     }
     
     private func prepareDatabase(fromScratch: Bool = false) throws {
+        Log.verbose?.message("Preparing database \(fromScratch ? "from scratch" : "")...")
         if fromScratch {
             try URLTask.revert(database)
+            try database.delete("fluent")
         }
         try URLTask.prepare(database)
+        Log.verbose?.message("Done.")
     }
     
     private func addRootURLTasks() throws {
+        Log.verbose?.message("Adding root tasks...")
         for t in tasks {
             if var alreadyScheduled = try URLTask.query()
                 .filter("url", t.url.absoluteString)
@@ -67,17 +87,22 @@ public final class WhiteWidow: Dispatcher {
                 alreadyScheduled.lastUpdate = nil
                 alreadyScheduled.updateInterval = t.frequency
                 try alreadyScheduled.save()
+                Log.debug?.message(alreadyScheduled.description)
                 return
             }
             var urlTask = URLTask(url: t.url, updateInterval: t.frequency)
             try urlTask.save()
+            Log.debug?.message(urlTask.description)
         }
+        Log.verbose?.message("Done.")
     }
     
     func didFinishWork(_ crawler: Crawler) {
+        Log.verbose?.message("Crawler \(crawler.number) did finish all work.")
         dispatcherQueue.sync {
             finished += 1
             if finished == crawlers.count {
+                Log.verbose?.message("All crawlers did finish")
                 dispatcherQueue.async {
                     if self.loadTasks() {
                         self.startCrawlers()
@@ -96,19 +121,23 @@ public final class WhiteWidow: Dispatcher {
     }
     
     private func loadTasks() -> Bool {
+        Log.verbose?.message("Loading new tasks...")
         do {
             let shouldBeUpdated = try URLTask.shouldBeUpdated()
             guard shouldBeUpdated.count > 0 else {
+                Log.verbose?.message("All links are fresh.")
                 guard
                     let nearest = try URLTask.nearest(),
                     let nextUpdate = nearest.nextUpdate
                     else {
+                        Log.verbose?.message("Crawling done.")
                         shutdown()
                         return false
                 }
+                Log.verbose?.message("Scheduling next crawling session.")
                 let deadline: DispatchTime =
                     .now() + DispatchTimeInterval.seconds(Int(nextUpdate.timeIntervalSinceNow))
-                dispatcherQueue.asyncAfter(deadline: deadline, execute: { 
+                dispatcherQueue.asyncAfter(deadline: deadline, execute: {
                     if self.loadTasks() {
                         self.startCrawlers()
                     }
@@ -116,13 +145,17 @@ public final class WhiteWidow: Dispatcher {
                 return false
             }
             taskQueue = shouldBeUpdated
+            Log.verbose?.message("Done.")
             return true
-        } catch let e {
+        } catch let error {
+            Log.error?.message(error.localizedDescription)
+            Log.error?.trace()
             return false
         }
     }
     
     private func shutdown() {
+        Log.verbose?.message("Shutting down...")
         DispatchQueue.main.async {
             self.running = false
         }
