@@ -2,7 +2,7 @@ import Foundation
 import Kanna
 import Fluent
 
-public final class WhiteWidow {
+public final class WhiteWidow: Dispatcher {
     
     var database: Database
     
@@ -12,8 +12,10 @@ public final class WhiteWidow {
     
     var tasks = [CrawlingTask]()
     var taskQueue = [URLTask]()
-    var loadTaskQueue = DispatchQueue(label: "load_task_queue")
+    var dispatcherQueue = DispatchQueue(label: "load_task_queue")
     var crawlers = [Crawler]()
+    var running = false
+    var finished = 0
     
     public func crawl(root path:String,
                       every frequency: TimeInterval) -> CrawlingTask {
@@ -26,17 +28,28 @@ public final class WhiteWidow {
                     fromScratch: Bool = false) throws {
         try prepareDatabase()
         try addRootURLTasks()
+        registerSignalHandlers()
         createCrawlers(count: crawlers)
-        while true {}
+        running = true
+        while running {}
+    }
+    
+    func registerSignalHandlers() {
+        
     }
     
     func createCrawlers(count: Int){
         crawlers = [Crawler]()
-        for _ in 0..<count {
-            let c = Crawler(dispatcher: self)
-            c.startCrawling()
+        for i in 0..<count {
+            let c = Crawler(dispatcher: self,
+                            number: i)
             crawlers += [c]
         }
+    }
+    
+    func startCrawlers() {
+        finished = 0
+        crawlers.forEach { $0.startCrawling() }
     }
     
     private func prepareDatabase(fromScratch: Bool = false) throws {
@@ -61,27 +74,58 @@ public final class WhiteWidow {
         }
     }
     
-    func popURLTask() throws -> URLTask? {
-        var result: URLTask?
-        try loadTaskQueue.sync {
-            result = taskQueue.popLast()
-            guard result != nil else {
-                if try loadTasks() {
-                    result = try popURLTask()
+    func didFinishWork(_ crawler: Crawler) {
+        dispatcherQueue.sync {
+            finished += 1
+            if finished == crawlers.count {
+                dispatcherQueue.async {
+                    if self.loadTasks() {
+                        self.startCrawlers()
+                    }
                 }
-                return
             }
+        }
+    }
+    
+    func getNewTask(for crawler: Crawler) -> URLTask? {
+        var result: URLTask?
+        dispatcherQueue.sync {
+            result = taskQueue.popLast()
         }
         return result
     }
     
-    private func loadTasks() throws -> Bool {
-        let expired = try URLTask.expired()
-        guard expired.count > 0 else {
+    private func loadTasks() -> Bool {
+        do {
+            let shouldBeUpdated = try URLTask.shouldBeUpdated()
+            guard shouldBeUpdated.count > 0 else {
+                guard
+                    let nearest = try URLTask.nearest(),
+                    let nextUpdate = nearest.nextUpdate
+                    else {
+                        shutdown()
+                        return false
+                }
+                let deadline: DispatchTime =
+                    .now() + DispatchTimeInterval.seconds(Int(nextUpdate.timeIntervalSinceNow))
+                dispatcherQueue.asyncAfter(deadline: deadline, execute: { 
+                    if self.loadTasks() {
+                        self.startCrawlers()
+                    }
+                })
+                return false
+            }
+            taskQueue = shouldBeUpdated
+            return true
+        } catch let e {
             return false
         }
-        taskQueue = expired
-        return true
+    }
+    
+    private func shutdown() {
+        DispatchQueue.main.async {
+            self.running = false
+        }
     }
     
 }

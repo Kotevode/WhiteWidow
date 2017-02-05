@@ -72,6 +72,9 @@ internal final class URLTask: Entity {
     
     static func expired() throws -> [URLTask] {
         return try URLTask.query()
+            .filter("last_status",
+                    .notEquals,
+                    Status.done.rawValue)
             .filter("last_update + update_interval",
                     .lessThan,
                     Date().timeIntervalSince1970)
@@ -83,8 +86,8 @@ internal final class URLTask: Entity {
             .or({ (query) in
                 try query
                     .filter("last_status",
-                                 .equals,
-                                 Status.new.rawValue)
+                            .in,
+                            [ Status.new.rawValue , Status.failed.rawValue ])
                     .and({ (query) in
                         try query
                             .filter("last_update + update_interval",
@@ -100,8 +103,11 @@ internal final class URLTask: Entity {
     
     static func nearest() throws -> URLTask? {
         return try URLTask.query()
-            .filter("last_update + update_interval", Filter.Comparison.greaterThan, Date().timeIntervalSince1970)
-            .sort("last_update + update_interval", Sort.Direction.ascending)
+            .filter("last_update + update_interval",
+                    Filter.Comparison.greaterThan,
+                    Date().timeIntervalSince1970)
+            .sort("last_update + update_interval",
+                  Sort.Direction.ascending)
             .limit(1)
             .first()
     }

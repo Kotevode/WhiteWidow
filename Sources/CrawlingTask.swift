@@ -9,14 +9,14 @@
 import Foundation
 import Kanna
 
+typealias PageHandler = (HTMLDocument) -> ()
+typealias PageInfo = (handler: PageHandler, frequency: TimeInterval)
+
 public class CrawlingTask {
     
-    typealias PageHandler = (HTMLDocument) -> ()
-
     var frequency: TimeInterval
     var url: URL
-    var handlers = [URLWildcard : (handler: PageHandler,
-                                   frequency: TimeInterval)]()
+    var handlers = [URLWildcard : PageInfo]()
     
     init(path: String, frequency: TimeInterval = 0) {
         self.url = URL(string: path)!
@@ -31,6 +31,12 @@ public class CrawlingTask {
         let wildcardOptions = (handler: handler, frequency: expires)
         handlers[wildcard] = wildcardOptions
         return self
+    }
+    
+    func matches(url: URL) -> [PageInfo] {
+        return handlers
+            .filter { url ~= $0.key }
+            .map { $0.value }
     }
     
 }
