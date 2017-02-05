@@ -92,4 +92,25 @@ class URLTaskTests: XCTestCase {
         
     }
     
+    func testCanSelectTasksThatShouldBeUpdated() {
+        var t1 = URLTask(url: URL(string: "http://google.com")!, updateInterval: 30*60)
+        t1.lastStatus = .updated
+        var t2 = URLTask(url: URL(string: "yahoo.com")!, updateInterval: 100*60)
+        t2.lastStatus = .done
+        var t3 = URLTask(url: URL(string: "rambler.com")!)
+        t3.lastStatus = .new
+    
+        t1.lastUpdate = Date().addingTimeInterval(-150*60)
+        t2.lastUpdate = Date().addingTimeInterval(-150*60)
+        
+        try! t1.save()
+        try! t2.save()
+        try! t3.save()
+        
+        let shouldBeUpdated = try! URLTask.shouldBeUpdated()
+        XCTAssertEqual(shouldBeUpdated[0].id, t1.id)
+        XCTAssertEqual(shouldBeUpdated[1].id, t3.id)
+        
+    }
+    
 }

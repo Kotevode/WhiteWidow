@@ -11,13 +11,28 @@ import Fluent
 
 internal final class URLTask: Entity {
     
+    enum Status: String {
+        case new = "new"
+        case done = "done"
+        case updated = "updated"
+        case failed = "failed"
+    }
+    
     static var entity = "url_tasks"
+    var exists: Bool = false
     
     var id: Node?
     var foundIn: Node?
     var url: URL
     var updateInterval: TimeInterval// 0 means fetch once
     var lastUpdate: Date?
+    var lastStatus = Status.new
+    var nextUpdate: Date? {
+        guard lastUpdate != nil && updateInterval != 0 else {
+            return nil
+        }
+        return lastUpdate!.addingTimeInterval(updateInterval)
+    }
     
     func parentTask() throws -> Parent<URLTask>? {
         return try self.parent(foundIn)
@@ -41,6 +56,7 @@ internal final class URLTask: Entity {
             self.lastUpdate = Date(timeIntervalSince1970: timestamp)
         }
         self.foundIn = node["owner_id"]
+        self.lastStatus = Status(rawValue: try node.extract("last_status"))!
     }
     
     public func makeNode(context: Context) throws -> Node {
@@ -49,14 +65,36 @@ internal final class URLTask: Entity {
             "urltask_id": foundIn,
             "url": url.absoluteString,
             "update_interval": updateInterval,
-            "last_update": lastUpdate?.timeIntervalSince1970
+            "last_update": lastUpdate?.timeIntervalSince1970,
+            "last_status": lastStatus.rawValue
             ])
     }
     
     static func expired() throws -> [URLTask] {
         return try URLTask.query()
-            .filter("update_interval", Filter.Comparison.notEquals, 0.0)
-            .filter("last_update + update_interval", Filter.Comparison.lessThan, Date().timeIntervalSince1970)
+            .filter("last_update + update_interval",
+                    .lessThan,
+                    Date().timeIntervalSince1970)
+            .all()
+    }
+    
+    static func shouldBeUpdated() throws -> [URLTask] {
+        return try URLTask.query()
+            .or({ (query) in
+                try query
+                    .filter("last_status",
+                                 .equals,
+                                 Status.new.rawValue)
+                    .and({ (query) in
+                        try query
+                            .filter("last_update + update_interval",
+                                    .lessThan,
+                                    Date().timeIntervalSince1970)
+                            .filter("last_status",
+                                    .equals,
+                                    Status.updated.rawValue)
+                    })
+            })
             .all()
     }
     
@@ -79,6 +117,7 @@ extension URLTask: Preparation {
             creator.string("url", optional: false, unique: true)
             creator.double("update_interval")
             creator.double("last_update", optional: true, unique: false, default: nil)
+            creator.string("last_status")
         }
     }
     
