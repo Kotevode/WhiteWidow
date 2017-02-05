@@ -18,7 +18,7 @@ protocol Dispatcher {
     
 }
 
-final class Crawler {
+internal final class Crawler {
     
     var dispatcher: Dispatcher?
     var crawlingQueue: DispatchQueue
@@ -48,21 +48,28 @@ final class Crawler {
     func process(task: URLTask) throws {
         Log.verbose?.message("Crawler \(self.number): Processing task: \(task.description)")
         guard let page = downloadPage(from: task.url) else {
-            Log.warning?.message("Crawler \(self.number): Cannot download page")
+            Log.warning?.message("Crawler \(self.number): Cannot download page from \(task.url.absoluteString)")
             try update(task: task, withStatus: .failed)
             return
         }
-        handle(url: task.url, page: page)
+        handle(page: page, at: task.url)
         try update(task: task,
                    withStatus: task.updateInterval == 0.0 ? .done : .updated)
         let extracted = extractLinks(from: page, at: task.url)
-        try extracted.forEach { try add(task: $0) }
+        try extracted.forEach { try add(task: $0, foundIn: task) }
         Log.verbose?.message("Crawler \(self.number): Done.")
     }
     
-    func extractLinks(from page: HTMLDocument, at url: URL) -> [URLTask] {
+    func extractLinks(from page: String, at url: URL) -> [URLTask] {
+        guard let html = HTML(html: page, encoding: .utf8) else {
+            Log.warning?.message(
+                "Crawler \(self.number): Cannot extract links from \(url.absoluteString): " +
+                "response is not a html page"
+            )
+            return []
+        }
         var result = [URLTask]()
-        for link in page.xpath(".//a") {
+        for link in html.xpath(".//a") {
             guard
                 let link = link["href"]?.string,
                 let url = URL(string: link, relativeTo: url),
@@ -80,10 +87,11 @@ final class Crawler {
             result += [URLTask(url: url,
                                updateInterval: updateInterval)]
         }
+        Log.info?.message("Crawler \(self.number): \(result.count) links found")
         return result
     }
     
-    func handle(url: URL, page: HTMLDocument) {
+    func handle(page: String, at url: URL) {
         guard let tasks = self.dispatcher?.tasks else {
             return
         }
@@ -91,7 +99,7 @@ final class Crawler {
         for task in tasks {
             let matches = task.matches(url: url)
             for match in matches {
-                match.handler(page)
+                match.handler(page, url)
             }
         }
         Log.verbose?.message("Crawler \(self.number): Done.")
@@ -107,8 +115,9 @@ final class Crawler {
         Log.verbose?.message("Done.")
     }
     
-    func add(task: URLTask) throws {
+    func add(task: URLTask, foundIn: URLTask) throws {
         Log.verbose?.message("Crawler \(self.number): Creating task...")
+        task.foundIn = foundIn.id
         let alreadyAdded = try URLTask.query()
             .filter("url",
                     .equals,
@@ -119,25 +128,25 @@ final class Crawler {
         }
         var t = task
         try t.save()
-        Log.info?.message("Crawler \(self.number): Task \(task.description) added")
+        Log.verbose?.message("Crawler \(self.number): Task \(task.description) added")
         Log.verbose?.message("Done.")
     }
     
-    func downloadPage(from url: URL) -> HTMLDocument? {
+    func downloadPage(from url: URL) -> String? {
         Log.verbose?.message("Crawler \(self.number): Downloading page from \(url.absoluteString)...")
         let semaphore = DispatchSemaphore(value: 0)
-        var result: HTMLDocument?
+        var result: String?
         let session = URLSession.shared
         let task = session.dataTask(with: url) { (data, resposne, error) in
             guard let data = data else {
                 Log.warning?.message("Crawler \(self.number): \(error!.localizedDescription)")
                 return
             }
-            result = HTML(html: data, encoding: .utf8)
+            result = String(data: data, encoding: .utf8)
             semaphore.signal()
         }
         task.resume()
-        semaphore.wait(timeout: .distantFuture)
+        semaphore.wait()
         Log.verbose?.message("Crawler \(self.number): Done.")
         return result
     }

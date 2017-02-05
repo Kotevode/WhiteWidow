@@ -35,13 +35,13 @@ internal final class URLTask: Entity, CustomStringConvertible {
     }
     
     var description: String {
-        var result = ["URLTask: \(url.absoluteString)"]
-        result += ["update interval: \(updateInterval)"]
+        var result = ["\nURLTask: \(url.absoluteString)"]
+        result += ["\tupdate interval: \(updateInterval)"]
         if lastUpdate != nil {
-            result += ["last update: \(lastUpdate!)"]
+            result += ["\tlast update: \(lastUpdate!)"]
         }
-        result += ["last status: \(lastStatus.rawValue)"]
-        return result.joined(separator: ", ")
+        result += ["\tlast status: \(lastStatus.rawValue)\n"]
+        return result.joined(separator: "\n")
     }
     
     func parentTask() throws -> Parent<URLTask>? {
@@ -65,7 +65,7 @@ internal final class URLTask: Entity, CustomStringConvertible {
         if let timestamp = node["last_update"]?.double {
             self.lastUpdate = Date(timeIntervalSince1970: timestamp)
         }
-        self.foundIn = node["owner_id"]
+        self.foundIn = node["urltask_id"]
         self.lastStatus = Status(rawValue: try node.extract("last_status"))!
     }
     

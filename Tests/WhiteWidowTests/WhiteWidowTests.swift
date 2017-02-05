@@ -22,14 +22,13 @@ class WhiteWidowTests: XCTestCase {
         
         Log.enable(configuration: XcodeLogConfiguration(minimumSeverity: .verbose))
         
-        let ww = WhiteWidow(database: database)
-        ww.crawl(root: "http://eda.ru/", every: 3*60)
-            .add(matches: "recepty/*", expires: 120*60) { (page) in
-                print("Page crawled)")
+        let whiteWidow = WhiteWidow(database: database)
+        whiteWidow.crawl(root: "http://eda.ru/recepty/", every: 24*60*60)
+            .add(matches: "*", expires: 24*60*60) { (page, url) in
+                print("Page at \(url.absoluteString) crawled")
         }
         
-        try! ww.run(crawlers: 4, fromScratch: true)
-        
+        try! whiteWidow.run(crawlers: 4, fromScratch: true)
     }
     
     static var allTests : [(String, (WhiteWidowTests) -> () throws -> Void)] {

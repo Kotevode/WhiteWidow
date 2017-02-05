@@ -9,7 +9,7 @@
 import Foundation
 import Kanna
 
-typealias PageHandler = (HTMLDocument) -> ()
+typealias PageHandler = (String, URL) -> ()
 typealias PageInfo = (handler: PageHandler, frequency: TimeInterval)
 
 public class CrawlingTask {

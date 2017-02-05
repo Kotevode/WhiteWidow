@@ -45,6 +45,7 @@ public final class WhiteWidow: Dispatcher {
         }
     }
     
+    //TODO: Handle system signals
     func registerSignalHandlers() {
         
     }
