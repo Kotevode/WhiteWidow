@@ -38,7 +38,7 @@ public final class WhiteWidow: Dispatcher {
                 running = true
             }
             while running {}
-            Log.verbose?.message("Crawling done. Bye.")
+            Log.info?.message("Crawling done. Bye.")
         } catch let error {
             Log.error?.message(error.localizedDescription)
             Log.error?.trace()
@@ -56,7 +56,7 @@ public final class WhiteWidow: Dispatcher {
             let c = Crawler(dispatcher: self,
                             number: i)
             crawlers += [c]
-            Log.verbose?.message("Crawler \(i) created")
+            Log.info?.message("Crawler \(i) created")
         }
         Log.verbose?.message("Done.")
     }
@@ -75,6 +75,7 @@ public final class WhiteWidow: Dispatcher {
             try database.delete("fluent")
         }
         try URLTask.prepare(database)
+        Log.info?.message("Database prepared")
         Log.verbose?.message("Done.")
     }
     
@@ -87,12 +88,12 @@ public final class WhiteWidow: Dispatcher {
                 alreadyScheduled.lastUpdate = nil
                 alreadyScheduled.updateInterval = t.frequency
                 try alreadyScheduled.save()
-                Log.debug?.message(alreadyScheduled.description)
+                Log.info?.message(alreadyScheduled.description)
                 return
             }
             var urlTask = URLTask(url: t.url, updateInterval: t.frequency)
             try urlTask.save()
-            Log.debug?.message(urlTask.description)
+            Log.info?.message(urlTask.description)
         }
         Log.verbose?.message("Done.")
     }
@@ -130,7 +131,7 @@ public final class WhiteWidow: Dispatcher {
                     let nearest = try URLTask.nearest(),
                     let nextUpdate = nearest.nextUpdate
                     else {
-                        Log.verbose?.message("Crawling done.")
+                        Log.info?.message("Crawling done.")
                         shutdown()
                         return false
                 }
@@ -142,9 +143,11 @@ public final class WhiteWidow: Dispatcher {
                         self.startCrawlers()
                     }
                 })
+                Log.info?.message("Next crawling session scheduled at \(nextUpdate).")
                 return false
             }
             taskQueue = shouldBeUpdated
+            Log.info?.message("New tasks loaded.")
             Log.verbose?.message("Done.")
             return true
         } catch let error {

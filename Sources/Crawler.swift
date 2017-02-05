@@ -31,7 +31,7 @@ final class Crawler {
     }
     
     func startCrawling(){
-        Log.verbose?.message("Crawler \(number): started")
+        Log.info?.message("Crawler \(number): started")
         crawlingQueue.async {
             do {
                 while let urlTask = self.dispatcher?.getNewTask(for: self) {
@@ -98,16 +98,17 @@ final class Crawler {
     }
     
     func update(task: URLTask, withStatus status: URLTask.Status) throws {
-        Log.verbose?.message("Crawler \(self.number): Updating \(task.description) with status \(status.rawValue)...")
+        Log.verbose?.message("Crawler \(self.number): Updating task...")
         task.lastUpdate = Date()
         task.lastStatus = status
         var t = task
         try t.save()
+        Log.info?.message("Crawler \(self.number), Task updated: \(task.description)")
         Log.verbose?.message("Done.")
     }
     
     func add(task: URLTask) throws {
-        Log.verbose?.message("Crawler \(self.number): Adding \(task.description)...")
+        Log.verbose?.message("Crawler \(self.number): Creating task...")
         let alreadyAdded = try URLTask.query()
             .filter("url",
                     .equals,
@@ -118,6 +119,7 @@ final class Crawler {
         }
         var t = task
         try t.save()
+        Log.info?.message("Crawler \(self.number): Task \(task.description) added")
         Log.verbose?.message("Done.")
     }
     

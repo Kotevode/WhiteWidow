@@ -14,7 +14,7 @@ class CrawlerTests: XCTestCase {
 
     func testCanDownloadPage() {
         
-        Log.enable(configuration: XcodeLogConfiguration(minimumSeverity: .verbose))
+        Log.enable(configuration: XcodeLogConfiguration(minimumSeverity: .info))
         
         let crawler = Crawler(dispatcher: nil, number: 0)
         let page = crawler.downloadPage(from: URL(string: "http://eda.ru/")!)
