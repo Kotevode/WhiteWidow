@@ -3,10 +3,15 @@ import Kanna
 import Fluent
 import CleanroomLogger
 
+/// Class for scheduling and dispatching crawling tasks
 public final class WhiteWidow: Dispatcher {
 
     var database: Database
 
+    
+    /// Initialization
+    ///
+    /// - Parameter database:database instance that should be used for storing link hierarchy
     init(database: Database) {
         self.database = database
     }
@@ -18,6 +23,12 @@ public final class WhiteWidow: Dispatcher {
     var running = false
     var finished = 0
 
+    /// Schedule crawling
+    ///
+    /// - Parameters:
+    ///   - path: url where crawling will start
+    ///   - frequency: update frequency of path in seconds
+    /// - Returns: scheduled crawling task
     public func crawl(root path:String,
                       every frequency: TimeInterval) -> CrawlingTask {
         let task = CrawlingTask(path: path, frequency: frequency)
@@ -25,6 +36,12 @@ public final class WhiteWidow: Dispatcher {
         return task
     }
 
+    /// Start crawling
+    ///
+    /// - Parameters:
+    ///   - crawlers: number of crawling units
+    ///   - fromScratch: if true link hierarchy will be recreated
+    /// - Throws: any database error
     public func run(crawlers: Int,
                     fromScratch: Bool = false) throws {
         Log.enable()
@@ -69,7 +86,7 @@ public final class WhiteWidow: Dispatcher {
         Log.verbose?.message("Done.")
     }
 
-    private func prepareDatabase(fromScratch: Bool = false) throws {
+    func prepareDatabase(fromScratch: Bool = false) throws {
         Log.verbose?.message("Preparing database \(fromScratch ? "from scratch" : "")...")
         if fromScratch {
             try URLTask.revert(database)
@@ -80,7 +97,7 @@ public final class WhiteWidow: Dispatcher {
         Log.verbose?.message("Done.")
     }
 
-    private func addRootURLTasks() throws {
+    func addRootURLTasks() throws {
         Log.verbose?.message("Adding root tasks...")
         for t in tasks {
             if var alreadyScheduled = try URLTask.query()
@@ -122,7 +139,7 @@ public final class WhiteWidow: Dispatcher {
         return result
     }
 
-    private func loadTasks() -> Bool {
+    func loadTasks() -> Bool {
         Log.verbose?.message("Loading new tasks...")
         do {
             let shouldBeUpdated = try URLTask.shouldBeUpdated()
@@ -158,7 +175,7 @@ public final class WhiteWidow: Dispatcher {
         }
     }
 
-    private func shutdown() {
+    func shutdown() {
         Log.verbose?.message("Shutting down...")
         DispatchQueue.main.async {
             self.running = false
