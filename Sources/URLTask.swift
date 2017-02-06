@@ -35,12 +35,13 @@ internal final class URLTask: Entity, CustomStringConvertible {
     }
     
     var description: String {
-        var result = ["\nURLTask: \(url.absoluteString)"]
+        var result = ["\nURLTask: {"]
+        result += ["\turl: \(url.absoluteString)"]
         result += ["\tupdate interval: \(updateInterval)"]
         if lastUpdate != nil {
             result += ["\tlast update: \(lastUpdate!)"]
         }
-        result += ["\tlast status: \(lastStatus.rawValue)\n"]
+        result += ["\tlast status: \(lastStatus.rawValue)\n}"]
         return result.joined(separator: "\n")
     }
     
@@ -94,7 +95,7 @@ internal final class URLTask: Entity, CustomStringConvertible {
     static func shouldBeUpdated() throws -> [URLTask] {
         return try URLTask.query()
             .or({ (query) in
-                try query
+                _ = try query
                     .filter("last_status",
                             .in,
                             [ Status.new.rawValue , Status.failed.rawValue ])

@@ -4,27 +4,27 @@ import Fluent
 import CleanroomLogger
 
 public final class WhiteWidow: Dispatcher {
-    
+
     var database: Database
-    
+
     init(database: Database) {
         self.database = database
     }
-    
+
     var tasks = [CrawlingTask]()
     var taskQueue = [URLTask]()
     var dispatcherQueue = DispatchQueue(label: "load_task_queue")
     var crawlers = [Crawler]()
     var running = false
     var finished = 0
-    
+
     public func crawl(root path:String,
                       every frequency: TimeInterval) -> CrawlingTask {
         let task = CrawlingTask(path: path, frequency: frequency)
         tasks += [task]
         return task
     }
-    
+
     public func run(crawlers: Int,
                     fromScratch: Bool = false) throws {
         Log.enable()
@@ -44,13 +44,13 @@ public final class WhiteWidow: Dispatcher {
             Log.error?.trace()
         }
     }
-    
-    //TODO: Handle system signals
+
+    // TODO: Handle system signals
     func registerSignalHandlers() {
-        
+
     }
-    
-    func createCrawlers(count: Int){
+
+    func createCrawlers(count: Int) {
         Log.verbose?.message("Creating crawlers...")
         crawlers = [Crawler]()
         for i in 0..<count {
@@ -61,14 +61,14 @@ public final class WhiteWidow: Dispatcher {
         }
         Log.verbose?.message("Done.")
     }
-    
+
     func startCrawlers() {
         Log.verbose?.message("Starting crawlers...")
         finished = 0
         crawlers.forEach { $0.startCrawling() }
         Log.verbose?.message("Done.")
     }
-    
+
     private func prepareDatabase(fromScratch: Bool = false) throws {
         Log.verbose?.message("Preparing database \(fromScratch ? "from scratch" : "")...")
         if fromScratch {
@@ -79,7 +79,7 @@ public final class WhiteWidow: Dispatcher {
         Log.info?.message("Database prepared")
         Log.verbose?.message("Done.")
     }
-    
+
     private func addRootURLTasks() throws {
         Log.verbose?.message("Adding root tasks...")
         for t in tasks {
@@ -98,7 +98,7 @@ public final class WhiteWidow: Dispatcher {
         }
         Log.verbose?.message("Done.")
     }
-    
+
     func didFinishWork(_ crawler: Crawler) {
         Log.verbose?.message("Crawler \(crawler.number) did finish all work.")
         dispatcherQueue.sync {
@@ -113,7 +113,7 @@ public final class WhiteWidow: Dispatcher {
             }
         }
     }
-    
+
     func getNewTask(for crawler: Crawler) -> URLTask? {
         var result: URLTask?
         dispatcherQueue.sync {
@@ -121,7 +121,7 @@ public final class WhiteWidow: Dispatcher {
         }
         return result
     }
-    
+
     private func loadTasks() -> Bool {
         Log.verbose?.message("Loading new tasks...")
         do {
@@ -157,12 +157,12 @@ public final class WhiteWidow: Dispatcher {
             return false
         }
     }
-    
+
     private func shutdown() {
         Log.verbose?.message("Shutting down...")
         DispatchQueue.main.async {
             self.running = false
         }
     }
-    
+
 }

@@ -11,26 +11,26 @@ import Kanna
 import CleanroomLogger
 
 protocol Dispatcher {
-    
+
     func getNewTask(for crawler: Crawler) -> URLTask?
     func didFinishWork(_ crawler: Crawler)
     var tasks: [CrawlingTask] { get }
-    
+
 }
 
 internal final class Crawler {
-    
+
     var dispatcher: Dispatcher?
     var crawlingQueue: DispatchQueue
     var number: Int
-    
+
     init(dispatcher: Dispatcher?, number: Int) {
         self.dispatcher = dispatcher
         self.number = number
         crawlingQueue = DispatchQueue(label: "crawling_queue_\(number)")
     }
-    
-    func startCrawling(){
+
+    func startCrawling() {
         Log.info?.message("Crawler \(number): started")
         crawlingQueue.async {
             do {
@@ -44,7 +44,7 @@ internal final class Crawler {
             }
         }
     }
-    
+
     func process(task: URLTask) throws {
         Log.verbose?.message("Crawler \(self.number): Processing task: \(task.description)")
         guard let page = downloadPage(from: task.url) else {
@@ -59,7 +59,7 @@ internal final class Crawler {
         try extracted.forEach { try add(task: $0, foundIn: task) }
         Log.verbose?.message("Crawler \(self.number): Done.")
     }
-    
+
     func extractLinks(from page: String, at url: URL) -> [URLTask] {
         guard let html = HTML(html: page, encoding: .utf8) else {
             Log.warning?.message(
@@ -90,7 +90,7 @@ internal final class Crawler {
         Log.info?.message("Crawler \(self.number): \(result.count) links found")
         return result
     }
-    
+
     func handle(page: String, at url: URL) {
         guard let tasks = self.dispatcher?.tasks else {
             return
@@ -104,7 +104,7 @@ internal final class Crawler {
         }
         Log.verbose?.message("Crawler \(self.number): Done.")
     }
-    
+
     func update(task: URLTask, withStatus status: URLTask.Status) throws {
         Log.verbose?.message("Crawler \(self.number): Updating task...")
         task.lastUpdate = Date()
@@ -114,7 +114,7 @@ internal final class Crawler {
         Log.info?.message("Crawler \(self.number), Task updated: \(task.description)")
         Log.verbose?.message("Done.")
     }
-    
+
     func add(task: URLTask, foundIn: URLTask) throws {
         Log.verbose?.message("Crawler \(self.number): Creating task...")
         task.foundIn = foundIn.id
@@ -131,13 +131,13 @@ internal final class Crawler {
         Log.verbose?.message("Crawler \(self.number): Task \(task.description) added")
         Log.verbose?.message("Done.")
     }
-    
+
     func downloadPage(from url: URL) -> String? {
         Log.verbose?.message("Crawler \(self.number): Downloading page from \(url.absoluteString)...")
         let semaphore = DispatchSemaphore(value: 0)
         var result: String?
         let session = URLSession.shared
-        let task = session.dataTask(with: url) { (data, resposne, error) in
+        let task = session.dataTask(with: url) { (data, _, error) in
             guard let data = data else {
                 Log.warning?.message("Crawler \(self.number): \(error!.localizedDescription)")
                 return
@@ -150,5 +150,5 @@ internal final class Crawler {
         Log.verbose?.message("Crawler \(self.number): Done.")
         return result
     }
-    
+
 }

@@ -9,7 +9,7 @@
 import Foundation
 
 extension URL {
-    
+
     var absolutePathComponents: [String] {
         var fullPath = [String]()
         if let scheme = self.scheme {
@@ -23,19 +23,19 @@ extension URL {
         }
         return fullPath + self.pathComponents
     }
-    
-    static func ~=(url: URL, wildcard: URLWildcard) -> Bool {
+
+    static func ~= (url: URL, wildcard: URLWildcard) -> Bool {
         return wildcard.match(url: url)
     }
-    
+
 }
 
 fileprivate enum AutomatoState: Equatable {
-    
+
     case state(State)
     case success
     case error
-    
+
     func nextState(key: String) -> AutomatoState {
         switch self {
         case .state(let state):
@@ -46,8 +46,8 @@ fileprivate enum AutomatoState: Equatable {
             return .error
         }
     }
-    
-    static func ==(lhs: AutomatoState, rhs: AutomatoState) -> Bool {
+
+    static func == (lhs: AutomatoState, rhs: AutomatoState) -> Bool {
         switch (lhs, rhs) {
         case (.success, .success):
             fallthrough
@@ -59,39 +59,39 @@ fileprivate enum AutomatoState: Equatable {
             return false
         }
     }
-    
+
 }
 
 fileprivate class State: Equatable {
-    
+
     var routes = [String: AutomatoState]()
     var defaultRoute: AutomatoState
-    
+
     init(routes: [String: AutomatoState],
          defaultRoute: AutomatoState = .error) {
         self.routes = routes
         self.defaultRoute = defaultRoute
     }
-    
+
     init(value: String,
          match: AutomatoState = .success,
          unmatch: AutomatoState = .error) {
         self.routes[value] = match
         self.defaultRoute = unmatch
     }
-    
+
     func nextState(key: String) -> AutomatoState {
         guard let value = routes[key] else {
             return defaultRoute
         }
         return value
     }
-    
-    static func ==(lhs: State, rhs: State) -> Bool {
+
+    static func == (lhs: State, rhs: State) -> Bool {
         return lhs.routes == rhs.routes &&
         lhs.defaultRoute == rhs.defaultRoute
     }
-    
+
 }
 
 fileprivate func makeAutomato(wildcard: URL) -> AutomatoState {
@@ -129,16 +129,16 @@ public class URLWildcard: CustomStringConvertible, Hashable {
     public var hashValue: Int {
         return description.hashValue
     }
-    
-    public static func ==(lhs: URLWildcard, rhs: URLWildcard) -> Bool {
+
+    public static func == (lhs: URLWildcard, rhs: URLWildcard) -> Bool {
         return lhs.automato == rhs.automato
     }
-    
+
     init(url: URL) {
         self.url = url
         automato = makeAutomato(wildcard: url)
     }
-    
+
     func match(url: URL) -> Bool {
         var automato = self.automato
         for p in url.absolutePathComponents + [""] {
@@ -151,5 +151,5 @@ public class URLWildcard: CustomStringConvertible, Hashable {
             return false
         }
     }
-    
+
 }
