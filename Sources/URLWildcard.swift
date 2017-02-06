@@ -30,7 +30,7 @@ extension URL {
 
 }
 
-fileprivate enum AutomatoState: Equatable {
+enum AutomatoState: Equatable {
 
     case state(State)
     case success
@@ -62,7 +62,7 @@ fileprivate enum AutomatoState: Equatable {
 
 }
 
-fileprivate class State: Equatable {
+class State: Equatable {
 
     var routes = [String: AutomatoState]()
     var defaultRoute: AutomatoState
@@ -94,13 +94,13 @@ fileprivate class State: Equatable {
 
 }
 
-fileprivate func makeAutomato(wildcard: URL) -> AutomatoState {
+func makeAutomato(wildcard: URL) -> AutomatoState {
     let fullPath = wildcard.absolutePathComponents + [""]
     var iterator = fullPath.makeIterator()
     return makeAutomato(iterator: &iterator)
 }
 
-fileprivate func makeAutomato(iterator: inout IndexingIterator<Array<String>>) -> AutomatoState {
+func makeAutomato(iterator: inout IndexingIterator<Array<String>>) -> AutomatoState {
     guard let part = iterator.next() else {
         return .success
     }
@@ -119,7 +119,7 @@ fileprivate func makeAutomato(iterator: inout IndexingIterator<Array<String>>) -
     }
 }
 
-public class URLWildcard: CustomStringConvertible, Hashable {
+class URLWildcard: CustomStringConvertible, Hashable {
 
     fileprivate var automato: AutomatoState
     var url: URL
