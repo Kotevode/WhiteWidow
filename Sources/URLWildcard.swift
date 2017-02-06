@@ -121,16 +121,16 @@ func makeAutomato(iterator: inout IndexingIterator<Array<String>>) -> AutomatoSt
 
 class URLWildcard: CustomStringConvertible, Hashable {
 
-    fileprivate var automato: AutomatoState
+    var automato: AutomatoState
     var url: URL
-    public var description: String {
+    var description: String {
         return url.absoluteString
     }
-    public var hashValue: Int {
+    var hashValue: Int {
         return description.hashValue
     }
 
-    public static func == (lhs: URLWildcard, rhs: URLWildcard) -> Bool {
+    static func == (lhs: URLWildcard, rhs: URLWildcard) -> Bool {
         return lhs.automato == rhs.automato
     }
 

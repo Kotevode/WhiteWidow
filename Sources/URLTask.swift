@@ -9,7 +9,7 @@
 import Foundation
 import Fluent
 
-internal final class URLTask: Entity, CustomStringConvertible {
+final class URLTask: Entity, CustomStringConvertible {
     
     enum Status: String {
         case new = "new"

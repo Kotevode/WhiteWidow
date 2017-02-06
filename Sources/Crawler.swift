@@ -18,7 +18,7 @@ protocol Dispatcher {
 
 }
 
-internal final class Crawler {
+final class Crawler {
 
     var dispatcher: Dispatcher?
     var crawlingQueue: DispatchQueue

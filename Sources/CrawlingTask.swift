@@ -9,7 +9,7 @@
 import Foundation
 import Kanna
 
-typealias PageHandler = (String, URL) -> ()
+public typealias PageHandler = (String, URL) -> ()
 typealias PageInfo = (handler: PageHandler, frequency: TimeInterval)
 
 public class CrawlingTask {
@@ -23,7 +23,7 @@ public class CrawlingTask {
         self.frequency = frequency
     }
 
-    func add(matches url: String,
+    public func add(matches url: String,
              expires: TimeInterval,
              handler: @escaping PageHandler) -> Self {
         let matchingURL = URL(string: url, relativeTo: self.url)!

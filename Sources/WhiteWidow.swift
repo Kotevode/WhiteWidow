@@ -6,13 +6,13 @@ import CleanroomLogger
 /// Class for scheduling and dispatching crawling tasks
 public final class WhiteWidow: Dispatcher {
 
-    var database: Database
+    public var database: Database
 
     
     /// Initialization
     ///
     /// - Parameter database:database instance that should be used for storing link hierarchy
-    init(database: Database) {
+    public init(database: Database) {
         self.database = database
     }
 
