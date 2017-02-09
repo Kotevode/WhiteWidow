@@ -92,7 +92,7 @@ public final class WhiteWidow: Dispatcher {
             try? URLTask.revert(database)
             try? database.delete("fluent")
         }
-        try? URLTask.prepare(database)
+        try? database.prepare(URLTask.self)
         Log.info?.message("Database prepared")
         Log.verbose?.message("Done.")
     }
