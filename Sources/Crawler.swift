@@ -71,7 +71,7 @@ final class Crawler {
         var result = [URLTask]()
         for link in html.xpath(".//a") {
             guard
-                let link = link["href"]?.string,
+                let link = link["href"]?.string?.deletingFragment,
                 let url = URL(string: link, relativeTo: url),
                 let tasks = self.dispatcher?.tasks else {
                     continue
