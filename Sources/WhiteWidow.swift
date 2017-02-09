@@ -89,10 +89,10 @@ public final class WhiteWidow: Dispatcher {
     func prepareDatabase(fromScratch: Bool = false) throws {
         Log.verbose?.message("Preparing database \(fromScratch ? "from scratch" : "")...")
         if fromScratch {
-            try URLTask.revert(database)
-            try database.delete("fluent")
+            try? URLTask.revert(database)
+            try? database.delete("fluent")
         }
-        try URLTask.prepare(database)
+        try? URLTask.prepare(database)
         Log.info?.message("Database prepared")
         Log.verbose?.message("Done.")
     }
@@ -175,9 +175,7 @@ public final class WhiteWidow: Dispatcher {
     
     func shutdown() {
         Log.verbose?.message("Shutting down...")
-        DispatchQueue.main.async {
-            self.running = false
-        }
+        self.running = false
     }
     
 }
